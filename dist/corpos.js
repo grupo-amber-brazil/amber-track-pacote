@@ -66,6 +66,9 @@ export function montarCorpoLead(entrada, cookies, idempotencia) {
     const pagina = caminhoSemQuery(m.pagina);
     if (pagina !== undefined)
         marcas.pagina = pagina;
+    const referrerHost = textoOuNada(m.referrer_host, 255);
+    if (referrerHost !== undefined)
+        marcas.referrer_host = referrerHost;
     // `marcas.atk`, se vier, vence o cookie. A API descarta `atk` fora do formato e conta no log.
     const atkDaMarca = textoOuNada(m.atk, 64);
     const atkDoCookie = cookies.get(COOKIE_DO_CLIQUE);

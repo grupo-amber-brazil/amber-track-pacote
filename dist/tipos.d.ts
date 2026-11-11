@@ -30,6 +30,8 @@ export type EntradaLead = {
         fbclid?: string;
         fbp?: string;
         pagina?: string;
+        /** Só o host de onde a pessoa veio (ex.: `l.instagram.com`). Opcional. */
+        referrer_host?: string;
         atk?: string;
     };
 };
@@ -122,6 +124,7 @@ export type CorpoLead = {
         fbclid?: string;
         fbp?: string;
         pagina?: string;
+        referrer_host?: string;
         atk?: string;
         abv?: string;
     };

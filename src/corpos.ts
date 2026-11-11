@@ -78,6 +78,8 @@ export function montarCorpoLead(
   if (fbp !== undefined) marcas.fbp = fbp;
   const pagina = caminhoSemQuery(m.pagina);
   if (pagina !== undefined) marcas.pagina = pagina;
+  const referrerHost = textoOuNada(m.referrer_host, 255);
+  if (referrerHost !== undefined) marcas.referrer_host = referrerHost;
 
   // `marcas.atk`, se vier, vence o cookie. A API descarta `atk` fora do formato e conta no log.
   const atkDaMarca = textoOuNada(m.atk, 64);

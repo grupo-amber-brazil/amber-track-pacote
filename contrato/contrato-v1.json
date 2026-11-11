@@ -1,0 +1,560 @@
+{
+  "contrato": "amber-track-api",
+  "versao": 1,
+  "descricao": "Contrato da API v1 do Amber Track (captura). Este arquivo mora, byte a byte, na Dash (lib/track/api-v1/contrato-v1.json) e no repositorio do pacote. Mudou num, muda no outro no mesmo par de PRs. Spec: .specs/#95-amber-track-captura-e-atribuicao/01-ponto-de-captura-e-api.md, secoes 6 e 7. Todos os exemplos sao ficticios.",
+  "prefixo": "/api/track/v1/",
+  "host": "so o host da Dash; nenhum dominio de links atende este prefixo",
+  "cabecalhos": {
+    "api": { "nome": "X-Amber-Track-Api", "valor": "1", "obrigatorio": true, "seInvalido": { "status": 400, "erro": "VERSAO_API" } },
+    "pacote": { "nome": "X-Amber-Track-Pacote", "formato": "^[0-9]+\\.[0-9]+\\.[0-9]+$", "obrigatorio": true }
+  },
+  "corpoDeErro": { "erro": "<CODIGO>", "mensagem": "<texto para quem le o log>" },
+  "formatos": {
+    "ponto": "^pc_[0-9A-HJKMNP-TV-Z]{16}$",
+    "segredo": "^ats_[0-9A-HJKMNP-TV-Z]{32}$",
+    "idempotencia": "^[0-9a-f]{64}$",
+    "atk": "^clk_[0-9A-HJKMNP-TV-Z]{16}$",
+    "abv": "^abv_[a-z0-9]{16}$",
+    "chaveDeCampo": "^[a-z][a-z0-9_]{0,39}$",
+    "tagPorId": "^#[0-9]+$"
+  },
+  "limites": {
+    "corpoDoLeadBytes": 16384,
+    "corpoDoRelatoBytes": 4096,
+    "corpoDoEventoBytes": 4096,
+    "nomeMax": 120,
+    "emailMax": 254,
+    "telefoneMinDigitos": 10,
+    "telefoneMaxDigitos": 15,
+    "camposMaxChaves": 30,
+    "campoValorMax": 500,
+    "utmMax": 255,
+    "fbMax": 500,
+    "paginaMax": 200,
+    "referrerHostMax": 255,
+    "relatoTagsMax": 20,
+    "relatoTagNomeMax": 255,
+    "relatoDetalheMax": 200,
+    "eventosPorIpPorMinuto": 60,
+    "leadsPorSitePorMinuto": 600
+  },
+  "vocabulario": {
+    "tiposDeEvento": ["visita"],
+    "resultadosDoRelato": ["ok", "pendente", "erro"],
+    "entregas": ["pagina", "track"],
+    "chavesProibidasEmCampos": ["tag", "tags", "lista", "list"],
+    "chavesReservadasEmCampos": ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "fbp", "pagina"]
+  },
+  "erros": {
+    "VERSAO_API": 400,
+    "SEGREDO_INVALIDO": 401,
+    "SITE_PAUSADO": 403,
+    "PONTO_DE_OUTRO_SITE": 403,
+    "ORIGEM_NAO_PERMITIDA": 403,
+    "PONTO_INEXISTENTE": 404,
+    "LEAD_INEXISTENTE": 404,
+    "CORPO_GRANDE": 413,
+    "SEM_CONTATO": 422,
+    "CAMPO_PROIBIDO": 422,
+    "CAMPO_DESCONHECIDO": 422,
+    "CORPO_INVALIDO": 422,
+    "TIPO_DE_EVENTO_DESCONHECIDO": 422,
+    "LIMITE_SITE": 429,
+    "LIMITE_IP": 429,
+    "CAPTURA_DESLIGADA": 503,
+    "BANCO_INDISPONIVEL": 503
+  },
+  "regraDoPacote": "Qualquer resposta diferente de 200 em /leads significa: a pagina entrega pelo caminho dela.",
+  "rotas": {
+    "leads": {
+      "metodo": "POST",
+      "caminho": "/api/track/v1/leads",
+      "quemChama": "servidor da pagina",
+      "autenticacao": "Authorization: Bearer <segredo do site>",
+      "contentType": "application/json",
+      "corpoMaxBytes": 16384,
+      "estrito": "em todo nivel: chave que nao esta no esquema (no corpo, em contato, em marcas ou em entrega_pagina) devolve 422 CAMPO_DESCONHECIDO",
+      "corpo": {
+        "ponto": { "obrigatorio": true, "formato": "ponto" },
+        "idempotencia": { "obrigatorio": true, "formato": "idempotencia", "nota": "sha256 calculado pelo pacote uma vez por envio; o pacote a devolve a pagina como leadRef" },
+        "contato": {
+          "obrigatorio": true,
+          "campos": {
+            "nome": { "obrigatorio": false, "max": 120, "nota": "sem espaco nas pontas" },
+            "email": { "obrigatorio": false, "max": 254, "nota": "e-mail valido" },
+            "telefone": { "obrigatorio": false, "nota": "10 a 15 digitos depois de tirar tudo que nao e digito" }
+          },
+          "regra": "e-mail ou telefone obrigatorio; sem os dois, 422 SEM_CONTATO"
+        },
+        "campos": { "obrigatorio": false, "nota": "ate 30 chaves no formato chaveDeCampo, cada valor texto ate 500; chave proibida ou reservada devolve 422 CAMPO_PROIBIDO" },
+        "marcas": {
+          "obrigatorio": false,
+          "campos": {
+            "atk": { "obrigatorio": false, "formato": "atk", "nota": "fora do formato e descartado, sem erro" },
+            "abv": { "obrigatorio": false, "formato": "abv" },
+            "utm_source": { "obrigatorio": false, "max": 255 },
+            "utm_medium": { "obrigatorio": false, "max": 255 },
+            "utm_campaign": { "obrigatorio": false, "max": 255 },
+            "utm_content": { "obrigatorio": false, "max": 255 },
+            "utm_term": { "obrigatorio": false, "max": 255 },
+            "fbclid": { "obrigatorio": false, "max": 500 },
+            "fbp": { "obrigatorio": false, "max": 500 },
+            "pagina": { "obrigatorio": false, "max": 200, "nota": "caminho sem query" },
+            "referrer_host": { "obrigatorio": false, "max": 255, "nota": "so o host" }
+          }
+        },
+        "reenvio": { "obrigatorio": false, "tipo": "booleano", "nota": "true no reenvio tardio do pacote" },
+        "entrega_pagina": {
+          "obrigatorio": false,
+          "nota": "o relato da pagina que pega carona no reenvio tardio; dado informado, nunca instrucao",
+          "campos": {
+            "resultado": { "obrigatorio": true, "valores": ["ok", "pendente", "erro"] },
+            "tags": { "obrigatorio": false, "nota": "ate 20; cada uma o nome (ate 255) ou #<id numerico>" },
+            "lista": { "obrigatorio": false, "tipo": "inteiro ou nulo" },
+            "detalhe": { "obrigatorio": false, "max": 200, "nota": "o servidor mascara e-mail e telefone antes de gravar" }
+          }
+        }
+      },
+      "respostaDeSucesso": {
+        "status": 200,
+        "corpo": { "lead": "<uuid>", "novo": "true|false", "entrega": "pagina|track" },
+        "nota": "com novo=false, entrega sai do modo gravado no lead, nunca do ponto de agora"
+      },
+      "respostasPorEstado": [
+        { "quando": "cabecalho X-Amber-Track-Api ausente ou diferente de 1", "status": 400, "erro": "VERSAO_API" },
+        { "quando": "segredo ausente, fora do formato ou desconhecido", "status": 401, "erro": "SEGREDO_INVALIDO" },
+        { "quando": "site do segredo pausado", "status": 403, "erro": "SITE_PAUSADO" },
+        { "quando": "ponto de outro site", "status": 403, "erro": "PONTO_DE_OUTRO_SITE" },
+        { "quando": "ponto que nao existe", "status": 404, "erro": "PONTO_INEXISTENTE" },
+        { "quando": "corpo acima de 16 KB", "status": 413, "erro": "CORPO_GRANDE" },
+        { "quando": "mais de 600 leads do site no minuto", "status": 429, "erro": "LIMITE_SITE" },
+        { "quando": "TRACK_CAPTURE_ENABLED=false", "status": 503, "erro": "CAPTURA_DESLIGADA" },
+        { "quando": "banco fora", "status": 503, "erro": "BANCO_INDISPONIVEL" }
+      ],
+      "exemplos": {
+        "validos": [
+          {
+            "nome": "lead completo",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+              "contato": { "nome": "Maria Silva", "email": "maria@example.com", "telefone": "+55 (11) 98765-4321" },
+              "campos": { "profissao": "nutricionista", "cidade": "Sao Paulo" },
+              "marcas": {
+                "atk": "clk_0123456789ABCDEF",
+                "abv": "abv_0123456789abcdef",
+                "utm_source": "meta",
+                "utm_medium": "cpc",
+                "utm_campaign": "black-2026",
+                "utm_content": "video-1",
+                "utm_term": "120211111111110000",
+                "fbclid": "IwAR0ficticio",
+                "fbp": "fb.1.1700000000000.1234567890",
+                "pagina": "/black",
+                "referrer_host": "l.instagram.com"
+              }
+            },
+            "resposta": { "status": 200, "corpo": { "lead": "01938c6e-0000-7000-8000-000000000001", "novo": true, "entrega": "track" } }
+          },
+          {
+            "nome": "so o e-mail",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "1111111111111111111111111111111111111111111111111111111111111111",
+              "contato": { "email": "maria@example.com" }
+            },
+            "resposta": { "status": 200, "corpo": { "lead": "01938c6e-0000-7000-8000-000000000002", "novo": true, "entrega": "pagina" } }
+          },
+          {
+            "nome": "so o telefone",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "2222222222222222222222222222222222222222222222222222222222222222",
+              "contato": { "telefone": "11987654321" }
+            },
+            "resposta": { "status": 200, "corpo": { "lead": "01938c6e-0000-7000-8000-000000000003", "novo": true, "entrega": "pagina" } }
+          },
+          {
+            "nome": "mesma idempotencia de novo: o lead ja existe",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "1111111111111111111111111111111111111111111111111111111111111111",
+              "contato": { "email": "maria@example.com" }
+            },
+            "resposta": { "status": 200, "corpo": { "lead": "01938c6e-0000-7000-8000-000000000002", "novo": false, "entrega": "pagina" } }
+          },
+          {
+            "nome": "reenvio tardio com o relato junto",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "3333333333333333333333333333333333333333333333333333333333333333",
+              "contato": { "email": "maria@example.com", "telefone": "5511987654321" },
+              "reenvio": true,
+              "entrega_pagina": { "resultado": "ok", "tags": ["[Bunday] Lead Black", "#204"], "lista": 70, "detalhe": "entregue pela pagina" }
+            },
+            "resposta": { "status": 200, "corpo": { "lead": "01938c6e-0000-7000-8000-000000000004", "novo": true, "entrega": "track" } }
+          },
+          {
+            "nome": "atk fora do formato e descartado, o lead entra",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "4444444444444444444444444444444444444444444444444444444444444444",
+              "contato": { "email": "maria@example.com" },
+              "marcas": { "atk": "clk_curto" }
+            },
+            "resposta": { "status": 200, "corpo": { "lead": "01938c6e-0000-7000-8000-000000000005", "novo": true, "entrega": "pagina" } }
+          }
+        ],
+        "invalidos": [
+          {
+            "nome": "sem e-mail e sem telefone",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "nome": "Maria Silva" }
+            },
+            "resposta": { "status": 422, "erro": "SEM_CONTATO" }
+          },
+          {
+            "nome": "tag no nivel de cima: a pagina nao escolhe tag",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "tags": ["Black 2026"]
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "lista no nivel de cima",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "lista": 70
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "campanha no nivel de cima",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "campanha": "black-2026"
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "chave desconhecida dentro de contato",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com", "cpf": "00000000000" }
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "chave desconhecida dentro de marcas",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "marcas": { "gclid": "ficticio" }
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "chave proibida em campos",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "campos": { "tag": "Black 2026" }
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_PROIBIDO" }
+          },
+          {
+            "nome": "chave reservada em campos: UTM vem em marcas",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "campos": { "utm_source": "meta" }
+            },
+            "resposta": { "status": 422, "erro": "CAMPO_PROIBIDO" }
+          },
+          {
+            "nome": "idempotencia fora do formato",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "idempotencia": "abc", "contato": { "email": "maria@example.com" } },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "ponto fora do formato",
+            "corpo": {
+              "ponto": "ponto-da-black",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" }
+            },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "e-mail invalido",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria-sem-arroba" }
+            },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "telefone com menos de 10 digitos",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "telefone": "98765-4321" }
+            },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "chave de campo fora do formato",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "campos": { "Profissao": "nutricionista" }
+            },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "resultado do relato fora do vocabulario",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "idempotencia": "5555555555555555555555555555555555555555555555555555555555555555",
+              "contato": { "email": "maria@example.com" },
+              "reenvio": true,
+              "entrega_pagina": { "resultado": "enviado" }
+            },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          }
+        ]
+      }
+    },
+    "entregaPagina": {
+      "metodo": "POST",
+      "caminho": "/api/track/v1/leads/entrega-pagina",
+      "quemChama": "servidor da pagina, depois de entregar (ou tentar entregar) ao ActiveCampaign",
+      "autenticacao": "Authorization: Bearer <segredo do site>",
+      "contentType": "application/json",
+      "corpoMaxBytes": 4096,
+      "estrito": "chave que nao esta no esquema devolve 422 CAMPO_DESCONHECIDO",
+      "corpo": {
+        "ponto": { "obrigatorio": true, "formato": "ponto" },
+        "lead_ref": { "obrigatorio": false, "formato": "idempotencia", "nota": "o leadRef que o capturarLead devolveu a pagina" },
+        "contato": {
+          "obrigatorio": true,
+          "campos": { "email": { "obrigatorio": false, "max": 254 }, "telefone": { "obrigatorio": false, "nota": "10 a 15 digitos" } },
+          "regra": "e-mail ou telefone obrigatorio; sem os dois, 422 SEM_CONTATO. Serve a busca de reserva"
+        },
+        "resultado": { "obrigatorio": true, "valores": ["ok", "pendente", "erro"] },
+        "tags": { "obrigatorio": false, "nota": "ate 20; cada uma o nome (ate 255) ou #<id numerico>" },
+        "lista": { "obrigatorio": false, "tipo": "inteiro ou nulo" },
+        "detalhe": { "obrigatorio": false, "max": 200, "nota": "a pagina nao deve mandar dado pessoal; o servidor mascara mesmo assim" }
+      },
+      "comoOLeadEAchado": [
+        "com lead_ref: pelo ponto e pela chave de idempotencia",
+        "sem lead_ref, ou sem achado: o lead mais recente do mesmo ponto com o mesmo e-mail (sem e-mail, o mesmo telefone) criado nos ultimos 10 minutos"
+      ],
+      "respostaDeSucesso": { "status": 200, "corpo": { "ok": true }, "nota": "o relato nunca vira instrucao: o Track so registra e compara com o ponto" },
+      "respostasPorEstado": [
+        { "quando": "cabecalho X-Amber-Track-Api ausente ou diferente de 1", "status": 400, "erro": "VERSAO_API" },
+        { "quando": "segredo ausente, fora do formato ou desconhecido", "status": 401, "erro": "SEGREDO_INVALIDO" },
+        { "quando": "site do segredo pausado", "status": 403, "erro": "SITE_PAUSADO" },
+        { "quando": "ponto de outro site", "status": 403, "erro": "PONTO_DE_OUTRO_SITE" },
+        { "quando": "ponto que nao existe", "status": 404, "erro": "PONTO_INEXISTENTE" },
+        { "quando": "lead nao achado pelos dois passos (o pacote tenta mais uma vez, 30 s depois, e desiste)", "status": 404, "erro": "LEAD_INEXISTENTE" },
+        { "quando": "corpo acima de 4 KB", "status": 413, "erro": "CORPO_GRANDE" },
+        { "quando": "TRACK_CAPTURE_ENABLED=false", "status": 503, "erro": "CAPTURA_DESLIGADA" },
+        { "quando": "banco fora", "status": 503, "erro": "BANCO_INDISPONIVEL" }
+      ],
+      "exemplos": {
+        "validos": [
+          {
+            "nome": "entregue, com a referencia",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "lead_ref": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+              "contato": { "email": "maria@example.com", "telefone": "11987654321" },
+              "resultado": "ok",
+              "tags": ["[Bunday] Lead Black", "Black 2026"],
+              "lista": 70
+            },
+            "resposta": { "status": 200, "corpo": { "ok": true } }
+          },
+          {
+            "nome": "pendente, sem referencia, tag por id",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "contato": { "email": "maria@example.com" }, "resultado": "pendente", "tags": ["#204"], "lista": null },
+            "resposta": { "status": 200, "corpo": { "ok": true } }
+          },
+          {
+            "nome": "erro com detalhe",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "lead_ref": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+              "contato": { "telefone": "11987654321" },
+              "resultado": "erro",
+              "detalhe": "AC 503"
+            },
+            "resposta": { "status": 200, "corpo": { "ok": true } }
+          }
+        ],
+        "invalidos": [
+          {
+            "nome": "resultado fora do vocabulario",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "contato": { "email": "maria@example.com" }, "resultado": "enviado" },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "sem contato",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "contato": {}, "resultado": "ok" },
+            "resposta": { "status": 422, "erro": "SEM_CONTATO" }
+          },
+          {
+            "nome": "chave desconhecida",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "contato": { "email": "maria@example.com" }, "resultado": "ok", "campanha": "black-2026" },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "lead_ref fora do formato",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "lead_ref": "abc", "contato": { "email": "maria@example.com" }, "resultado": "ok" },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "lista que nao e inteiro",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "contato": { "email": "maria@example.com" }, "resultado": "ok", "lista": "70" },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "tag vazia",
+            "corpo": { "ponto": "pc_0123456789ABCDEF", "contato": { "email": "maria@example.com" }, "resultado": "ok", "tags": [""] },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "lead que nao existe (corpo valido, estado do servidor)",
+            "corpo": {
+              "ponto": "pc_0123456789ABCDEF",
+              "lead_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+              "contato": { "email": "ninguem@example.com" },
+              "resultado": "ok"
+            },
+            "resposta": { "status": 404, "erro": "LEAD_INEXISTENTE" }
+          }
+        ]
+      }
+    },
+    "eventos": {
+      "metodo": "POST",
+      "caminho": "/api/track/v1/eventos",
+      "quemChama": "navegador, por navigator.sendBeacon",
+      "autenticacao": "nenhuma: a chave publica do ponto e o cabecalho Origin, que tem de estar nas origens do site por igualdade. Origem nao e autenticacao: a visita e contagem de melhor esforco",
+      "contentType": "text/plain (corpo JSON), para nao disparar pre-voo de CORS",
+      "corpoMaxBytes": 4096,
+      "estrito": "chave desconhecida devolve 422 CAMPO_DESCONHECIDO",
+      "preVoo": { "metodo": "OPTIONS", "status": 204 },
+      "corpo": {
+        "v": { "obrigatorio": true, "valor": 1 },
+        "pacote": { "obrigatorio": true, "formato": "semver" },
+        "ponto": { "obrigatorio": true, "formato": "ponto" },
+        "tipo": { "obrigatorio": true, "valores": ["visita"] },
+        "atk": { "obrigatorio": false, "formato": "atk" },
+        "abv": { "obrigatorio": false, "formato": "abv" },
+        "caminho": { "obrigatorio": false, "max": 200 },
+        "utm_source": { "obrigatorio": false, "max": 255 },
+        "utm_medium": { "obrigatorio": false, "max": 255 },
+        "utm_campaign": { "obrigatorio": false, "max": 255 },
+        "utm_content": { "obrigatorio": false, "max": 255 },
+        "utm_term": { "obrigatorio": false, "max": 255 },
+        "referrer_host": { "obrigatorio": false, "max": 255 }
+      },
+      "respostaDeSucesso": {
+        "status": 204,
+        "cabecalhos": { "Access-Control-Allow-Origin": "<a propria origem>", "Vary": "Origin" },
+        "nota": "ponto inexistente ou de site pausado tambem responde 204, sem gravar; ponto pausado ou arquivado grava"
+      },
+      "respostasPorEstado": [
+        { "quando": "Origin ausente ou fora das origens do site do ponto", "status": 403, "erro": "ORIGEM_NAO_PERMITIDA" },
+        { "quando": "corpo acima de 4 KB", "status": 413, "erro": "CORPO_GRANDE" },
+        { "quando": "mais de 60 eventos do IP no minuto, ou Redis fora (falha fechada)", "status": 429, "erro": "LIMITE_IP" },
+        { "quando": "TRACK_CAPTURE_ENABLED=false", "status": 503, "erro": "CAPTURA_DESLIGADA" }
+      ],
+      "exemplos": {
+        "validos": [
+          {
+            "nome": "visita com clique e visitante",
+            "origin": "https://lp.example.com",
+            "corpo": {
+              "v": 1,
+              "pacote": "1.0.0",
+              "ponto": "pc_0123456789ABCDEF",
+              "tipo": "visita",
+              "atk": "clk_0123456789ABCDEF",
+              "abv": "abv_0123456789abcdef",
+              "caminho": "/black",
+              "utm_source": "meta",
+              "utm_medium": "cpc",
+              "utm_campaign": "black-2026",
+              "utm_content": "video-1",
+              "utm_term": "120211111111110000",
+              "referrer_host": "l.instagram.com"
+            },
+            "resposta": { "status": 204 }
+          },
+          {
+            "nome": "visita minima",
+            "origin": "https://lp.example.com",
+            "corpo": { "v": 1, "pacote": "1.0.0", "ponto": "pc_0123456789ABCDEF", "tipo": "visita" },
+            "resposta": { "status": 204 }
+          }
+        ],
+        "invalidos": [
+          {
+            "nome": "tipo de evento fora do vocabulario",
+            "origin": "https://lp.example.com",
+            "corpo": { "v": 1, "pacote": "1.0.0", "ponto": "pc_0123456789ABCDEF", "tipo": "clique" },
+            "resposta": { "status": 422, "erro": "TIPO_DE_EVENTO_DESCONHECIDO" }
+          },
+          {
+            "nome": "chave desconhecida",
+            "origin": "https://lp.example.com",
+            "corpo": { "v": 1, "pacote": "1.0.0", "ponto": "pc_0123456789ABCDEF", "tipo": "visita", "email": "maria@example.com" },
+            "resposta": { "status": 422, "erro": "CAMPO_DESCONHECIDO" }
+          },
+          {
+            "nome": "versao do corpo que nao e 1",
+            "origin": "https://lp.example.com",
+            "corpo": { "v": 2, "pacote": "1.0.0", "ponto": "pc_0123456789ABCDEF", "tipo": "visita" },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "pacote que nao e semver",
+            "origin": "https://lp.example.com",
+            "corpo": { "v": 1, "pacote": "ultima", "ponto": "pc_0123456789ABCDEF", "tipo": "visita" },
+            "resposta": { "status": 422, "erro": "CORPO_INVALIDO" }
+          },
+          {
+            "nome": "origem fora da lista do site (corpo valido)",
+            "origin": "https://outro.example.org",
+            "corpo": { "v": 1, "pacote": "1.0.0", "ponto": "pc_0123456789ABCDEF", "tipo": "visita" },
+            "resposta": { "status": 403, "erro": "ORIGEM_NAO_PERMITIDA" }
+          },
+          {
+            "nome": "sem o cabecalho Origin (corpo valido)",
+            "origin": null,
+            "corpo": { "v": 1, "pacote": "1.0.0", "ponto": "pc_0123456789ABCDEF", "tipo": "visita" },
+            "resposta": { "status": 403, "erro": "ORIGEM_NAO_PERMITIDA" }
+          }
+        ]
+      }
+    }
+  }
+}
