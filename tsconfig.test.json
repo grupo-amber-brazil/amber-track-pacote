@@ -1,0 +1,12 @@
+// Build só para rodar os testes: compila src + test para .test-out (fora do git) e o
+// `node --test` roda o JS resultante. Sem bundler nem runner extra, no molde do
+// @amber/olho-de-deus.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": ".test-out",
+    "rootDir": ".",
+    "declaration": false
+  },
+  "include": ["src", "test"]
+}
