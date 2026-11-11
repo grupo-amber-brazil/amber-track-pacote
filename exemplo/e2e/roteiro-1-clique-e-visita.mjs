@@ -38,7 +38,7 @@ if (visita) {
   confere(visita.package_version === "0.1.0", "package_version = 0.1.0", visita.package_version);
 }
 
-// 3. O par clique ↔ visitante (F3, lib/track/public/pares.ts).
+// 3. O par clique ↔ visitante, gravado pela Dash a partir da visita.
 const pares = await consultar(`SELECT visitor_id, source FROM track_click_visitors WHERE click_id = $1`, [clique?.id ?? null]);
 confere(
   pares.some((p) => p.visitor_id === visita?.visitor_id && p.source === "pacote_visita"),

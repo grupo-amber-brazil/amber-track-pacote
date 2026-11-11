@@ -4,7 +4,7 @@
   "description": "Liga as páginas da Amber ao Amber Track: cookie do clique no proxy, lead e relato no servidor, visita e sck no navegador. Sem dependência de runtime.",
   "type": "module",
   "license": "UNLICENSED",
-  "private": false,
+  "private": true,
   "engines": {
     "node": ">=18"
   },

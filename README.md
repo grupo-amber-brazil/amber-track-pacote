@@ -105,6 +105,13 @@ export async function POST(request: Request) {
 | 2 s sem resposta | `true` | `tempo_esgotado` |
 | rede, 4xx, 5xx | `true` | `recusado` |
 
+O pacote ajusta o lead ao formato que a API aceita, para ele não ser recusado inteiro: se o e-mail
+ou o telefone (10 a 15 dígitos) é inválido e o outro é válido, só o válido vai; `campos` com chave
+fora de `^[a-z][a-z0-9_]{0,39}$`, valor acima de 500 caracteres ou além de 30 chaves são descartados;
+o nome corta em 120. Numa resposta 4xx, `console.warn` uma vez por processo e por código de erro,
+sem dado pessoal. No relato, tags vazias saem, cada tag corta em 255, vão até 20, e `lista` precisa
+ser inteiro positivo.
+
 A página nunca manda tag, lista nem campanha no lead: quem escolhe é o ponto, na Dash. O TypeScript
 recusa esses campos, e a API também.
 

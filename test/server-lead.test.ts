@@ -204,3 +204,26 @@ test("nunca lança erro para a rota, nem com entrada estranha", async () => {
   assert.equal(r.entregaPelaPagina, true);
   await t.rodarAgendadas();
 });
+
+test("4xx da API: um aviso por código e por processo, sem dado pessoal, e a página segue entregando", async () => {
+  const t = montar({ responder: () => json(422, { erro: "CORPO_INVALIDO" }) });
+  const r1 = await t.servidor.capturarLead(pedidoDaPagina(), ENTRADA);
+  const r2 = await t.servidor.capturarLead(pedidoDaPagina(), { ...ENTRADA, contato: { email: "outra@example.com" } });
+  for (const r of [r1, r2]) {
+    assert.equal(r.entregaPelaPagina, true);
+    assert.equal(r.motivo, "recusado");
+  }
+  assert.equal(t.avisos.length, 1);
+  assert.match(t.avisos[0], /422/);
+  assert.match(t.avisos[0], /CORPO_INVALIDO/);
+  assert.doesNotMatch(t.avisos[0], /example\.com|90000|Maria|emagrecer/);
+  t.trocarResposta(() => json(403, { erro: "ORIGEM_NAO_PERMITIDA" }));
+  await t.servidor.capturarLead(pedidoDaPagina(), { ...ENTRADA, contato: { email: "x@example.com" } });
+  assert.equal(t.avisos.length, 2, "código novo, aviso novo");
+});
+
+test("5xx não gera aviso de 4xx", async () => {
+  const t = montar({ responder: () => json(500, { erro: "ERRO_INTERNO" }) });
+  await t.servidor.capturarLead(pedidoDaPagina(), ENTRADA);
+  assert.equal(t.avisos.length, 0);
+});

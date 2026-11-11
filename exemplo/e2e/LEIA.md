@@ -1,7 +1,7 @@
-# E2E local do `@amber/track` (03 §10 da spec #95)
+# E2E local do `@amber/track`
 
 A prova de "pronto para instalar": o exemplo, com o pacote instalado pelo `.tgz`, contra a Dash
-**local** da branch, com as frentes F1, F2 e F3 integradas, antes da promoção da Dash para a `main`.
+**local**, com a captura do Amber Track já integrada, antes da promoção da Dash para produção.
 O ActiveCampaign é **simulado** por interceptador de `fetch` (`ac-simulado.mjs`): nada chega ao AC de
 verdade, e cada chamada vira uma linha em `e2e/saida/ac-simulado.jsonl`.
 
@@ -29,9 +29,18 @@ com o banco errado.
    O interceptador responde a qualquer `*.api-us1.com` e `*.activehosted.com`: mesmo com uma conta
    de verdade na env, a chamada não sai da máquina. Ele simula `contact/sync`, `contactTags`,
    `contactLists`, `tags`, `lists`, `fields` e `fieldValues` (ids estáveis por e-mail e por tag);
-   confira contra a porta do AC da F2 (`lib/track/ports/activecampaign.ts`) se ela usa outro caminho.
-2. Na Dash local: crie um **site** com a origem `http://localhost:3100` (anote o segredo `ats_`,
-   mostrado uma vez), um **ponto** "Pela página" com tags e lista (anote a chave `pc_`), e um **link**
+   confira, no código da Dash que fala com o AC, se ele usa outro caminho.
+2. Na Dash local: crie um **site** com uma origem `https://` qualquer (a tela só aceita `https://`;
+   anote o segredo `ats_`, mostrado uma vez). Depois libere a origem do exemplo direto no banco
+   **LOCAL de teste** (nunca em banco de verdade):
+
+   ```sql
+   UPDATE track_sites
+      SET allowed_origins = array_append(allowed_origins, 'http://localhost:3100')
+    WHERE id = '<id do site criado>';
+   ```
+
+   Sem essa origem, a visita do roteiro 1 recebe 403 `ORIGEM_NAO_PERMITIDA`. Crie ainda um **ponto** "Pela página" com tags e lista (anote a chave `pc_`), e um **link**
    da campanha do ponto. Abra o link uma vez para gerar um **clique**; anote o `clk_` dele
    (`track_clicks.code`).
 3. No exemplo:
@@ -66,7 +75,7 @@ Navegador: Chromium (Chrome ou Edge), que aceita cookie `Secure` em `http://loca
 
 Cada script imprime `ok` ou `FALHOU` por conferência e termina com código 0 (passou), 1 (alguma
 conferência falhou) ou 2 (faltou preparar algo). O resultado e o log do AC simulado de cada roteiro
-(`e2e/saida/ac-simulado.jsonl`) vão na descrição da PR da Dash, antes da promoção.
+(`e2e/saida/ac-simulado.jsonl`) vão na descrição da PR, antes da promoção.
 
 ## O que o E2E também mostra
 

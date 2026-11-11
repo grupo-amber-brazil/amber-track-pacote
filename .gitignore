@@ -10,4 +10,6 @@ node_modules/
 exemplo/e2e/saida/
 exemplo/package-lock.json
 exemplo/next-env.d.ts
+# Gerado pelo `next dev`; não é do pacote.
+exemplo/AGENTS.md
 *.tsbuildinfo

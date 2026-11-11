@@ -64,6 +64,17 @@ const respostaValida = (valor: unknown): valor is RespostaLead => {
 export function criarServidor(deps: Dependencias) {
   const pendentes = new Map<string, Pendente>();
   let avisouSemConfiguracao = false;
+  const avisosDe4xx = new Set<string>();
+
+  /** Um aviso por processo e por código de erro. Só status e código: nunca o corpo nem dado pessoal. */
+  function avisarRecusa(status: number, json: unknown): void {
+    const bruto = json && typeof json === "object" ? (json as Record<string, unknown>).erro : undefined;
+    const codigo = typeof bruto === "string" && /^[A-Z0-9_]{1,40}$/.test(bruto) ? bruto : "SEM_CODIGO";
+    const chave = `${status}:${codigo}`;
+    if (avisosDe4xx.has(chave)) return;
+    avisosDe4xx.add(chave);
+    deps.avisar(`[amber-track] a API recusou o lead (HTTP ${status}, ${codigo}). A página entrega como hoje; confira os dados do formulário e as envs.`);
+  }
 
   function configuracao(): { base: string; segredo: string } | null {
     const { url, segredo } = deps.env();
@@ -115,6 +126,7 @@ export function criarServidor(deps: Dependencias) {
     const r = await postar(base, segredo, "/api/track/v1/leads", corpo);
     if ("erro" in r) return r.erro === "tempo_esgotado" ? { tipo: "tempo_esgotado" } : { tipo: "recusado", status: null };
     if (r.status === 200 && respostaValida(r.json)) return { tipo: "ok", resposta: r.json };
+    if (r.status >= 400 && r.status < 500) avisarRecusa(r.status, r.json);
     return { tipo: "recusado", status: r.status };
   }
 

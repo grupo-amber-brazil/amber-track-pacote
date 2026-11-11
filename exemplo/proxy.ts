@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
   const response = NextResponse.next();
 
   // Só no exemplo: grava um `_abv` de teste quando não existe, para provar o par clique ↔
-  // visitante. Numa LP da Amanda, quem grava o `_abv` é o `proxy.ts` dela, não o pacote.
+  // visitante. Numa página de verdade, quem grava o `_abv` é o `proxy.ts` da própria página, não o pacote.
   if (!VISITANTE.test(request.cookies.get("_abv")?.value ?? "")) {
     response.cookies.set({
       name: "_abv",

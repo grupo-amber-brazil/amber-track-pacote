@@ -1,7 +1,8 @@
 /**
  * Montagem dos corpos que o servidor da página manda à API v1. Funções puras: nenhuma rede,
- * nenhum relógio. Os tetos abaixo são os da API (`contrato-v1.json`); o pacote corta antes de
- * mandar para um texto comprido demais não fazer a API recusar o lead inteiro.
+ * nenhum relógio. Os tetos abaixo são os da API (`contrato-v1.json`); o pacote corta ou descarta antes
+ * de mandar o que a API recusaria (formato do telefone, chave de campo, tamanho), para o lead não
+ * ser recusado inteiro.
  */
 import {
   COOKIE_DO_CLIQUE,
@@ -27,23 +28,54 @@ export function caminhoSemQuery(valor: unknown): string | undefined {
   return textoOuNada(corte >= 0 ? valor.slice(0, corte) : valor, 200);
 }
 
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+const CHAVE_DE_CAMPO = /^[a-z][a-z0-9_]{0,39}$/;
+const MAX_CAMPOS = 30;
+const MAX_TAGS = 20;
+
+const emailValido = (email: string | undefined): email is string =>
+  email !== undefined && email.length <= 254 && EMAIL_VALIDO.test(email);
+
+const telefoneValido = (telefone: string | undefined): telefone is string => {
+  if (telefone === undefined) return false;
+  const digitos = telefone.replace(/\D/g, "").length;
+  return digitos >= 10 && digitos <= 15;
+};
+
+/**
+ * E-mail e telefone como a API aceita. A API recusa o corpo inteiro (422) por um contato fora
+ * do formato; por isso, se um dos dois é inválido e o outro é válido, só o válido vai. Sem nenhum
+ * válido, vai o que veio (a API decide e o pacote avisa no 4xx).
+ */
+function contatoSaneado(email: string | undefined, telefone: string | undefined) {
+  const emailOk = emailValido(email);
+  const telefoneOk = telefoneValido(telefone);
+  if (emailOk && !telefoneOk) return { email, telefone: undefined };
+  if (telefoneOk && !emailOk) return { email: undefined, telefone };
+  return { email, telefone };
+}
+
 function contatoDoLead(contato: EntradaLead["contato"]): CorpoLead["contato"] {
   const saida: CorpoLead["contato"] = {};
   const nome = textoOuNada(contato?.nome, 120);
-  const email = textoOuNada(contato?.email, 254);
-  const telefone = textoOuNada(contato?.telefone, 40);
+  const { email, telefone } = contatoSaneado(
+    textoOuNada(contato?.email, 400),
+    textoOuNada(contato?.telefone, 40),
+  );
   if (nome !== undefined) saida.nome = nome;
   if (email !== undefined) saida.email = email;
   if (telefone !== undefined) saida.telefone = telefone;
   return saida;
 }
 
+/** Chave fora de `^[a-z][a-z0-9_]{0,39}$` e valor com mais de 500 caracteres saem; no máximo 30. */
 function camposDoLead(campos: EntradaLead["campos"]): Record<string, string> | undefined {
   if (!campos || typeof campos !== "object") return undefined;
   const saida: Record<string, string> = {};
   for (const [chave, valor] of Object.entries(campos)) {
-    if (typeof valor !== "string") continue;
-    saida[chave] = valor.length > 500 ? valor.slice(0, 500) : valor;
+    if (Object.keys(saida).length >= MAX_CAMPOS) break;
+    if (typeof valor !== "string" || !CHAVE_DE_CAMPO.test(chave) || valor.length > 500) continue;
+    saida[chave] = valor;
   }
   return Object.keys(saida).length > 0 ? saida : undefined;
 }
@@ -93,12 +125,24 @@ export function montarCorpoLead(
   return corpo;
 }
 
+/** Tags não vazias, cada uma até 255, no máximo 20. */
+function tagsDoRelato(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  const saida: string[] = [];
+  for (const t of tags) {
+    const texto = textoOuNada(t, 255);
+    if (texto !== undefined) saida.push(texto);
+    if (saida.length >= MAX_TAGS) break;
+  }
+  return saida;
+}
+
 /** O relato como vai dentro do reenvio tardio (`entrega_pagina`). */
 export function montarEntregaPagina(relato: RelatoDaPagina): CorpoEntregaPagina {
   const corpo: CorpoEntregaPagina = {
     resultado: relato.resultado,
-    tags: Array.isArray(relato.tags) ? relato.tags.filter((t) => typeof t === "string") : [],
-    lista: typeof relato.lista === "number" && Number.isInteger(relato.lista) ? relato.lista : null,
+    tags: tagsDoRelato(relato.tags),
+    lista: typeof relato.lista === "number" && Number.isInteger(relato.lista) && relato.lista > 0 ? relato.lista : null,
   };
   const detalhe = textoOuNada(relato.detalhe, 200);
   if (detalhe !== undefined) corpo.detalhe = detalhe;
@@ -108,8 +152,10 @@ export function montarEntregaPagina(relato: RelatoDaPagina): CorpoEntregaPagina 
 /** Corpo de `POST /api/track/v1/leads/entrega-pagina`. Sem `leadRef`, só o contato. */
 export function montarCorpoRelato(relato: RelatoDaPagina): CorpoRelato {
   const contato: CorpoRelato["contato"] = {};
-  const email = textoOuNada(relato.contato?.email, 254);
-  const telefone = textoOuNada(relato.contato?.telefone, 40);
+  const { email, telefone } = contatoSaneado(
+    textoOuNada(relato.contato?.email, 400),
+    textoOuNada(relato.contato?.telefone, 40),
+  );
   if (email !== undefined) contato.email = email;
   if (telefone !== undefined) contato.telefone = telefone;
 
