@@ -5,3 +5,9 @@ node_modules/
 .env.*
 !.env.example
 .next/
+
+# exemplo/: saída do E2E, lock (o .tgz muda a cada npm pack) e o que o Next gera
+exemplo/e2e/saida/
+exemplo/package-lock.json
+exemplo/next-env.d.ts
+*.tsbuildinfo
