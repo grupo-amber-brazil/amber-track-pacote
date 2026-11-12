@@ -7,6 +7,8 @@
 export const CODIGO_DO_CLIQUE = /^clk_[0-9A-HJKMNP-TV-Z]{16}$/;
 export const CHAVE_DO_PONTO = /^pc_[0-9A-HJKMNP-TV-Z]{16}$/;
 export const VISITANTE = /^abv_[a-z0-9]{16}$/;
+/** E-mail aceito: texto, arroba, domínio com ponto e sem espaço. Mesmo teste da Dash (contrato `formatos.email`). */
+export const EMAIL_VALIDO = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 /** Nome do cookie do clique. Gravado no servidor por `comAmberTrack`. */
 export const COOKIE_DO_CLIQUE = "_atk";

@@ -4,7 +4,7 @@
  * de mandar o que a API recusaria (formato do telefone, chave de campo, tamanho), para o lead não
  * ser recusado inteiro.
  */
-import { COOKIE_DO_CLIQUE, COOKIE_DO_VISITANTE, ehCodigoDoClique, ehVisitante, textoOuNada, } from "./formatos.js";
+import { COOKIE_DO_CLIQUE, COOKIE_DO_VISITANTE, EMAIL_VALIDO, ehCodigoDoClique, ehVisitante, textoOuNada, } from "./formatos.js";
 const UTMS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"];
 /** Caminho sem query nem fragmento, até 200. */
 export function caminhoSemQuery(valor) {
@@ -13,7 +13,6 @@ export function caminhoSemQuery(valor) {
     const corte = valor.search(/[?#]/);
     return textoOuNada(corte >= 0 ? valor.slice(0, corte) : valor, 200);
 }
-const EMAIL_VALIDO = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 const CHAVE_DE_CAMPO = /^[a-z][a-z0-9_]{0,39}$/;
 const MAX_CAMPOS = 30;
 const MAX_TAGS = 20;

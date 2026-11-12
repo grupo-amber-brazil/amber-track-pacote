@@ -16,7 +16,8 @@
     "atk": "^clk_[0-9A-HJKMNP-TV-Z]{16}$",
     "abv": "^abv_[a-z0-9]{16}$",
     "chaveDeCampo": "^[a-z][a-z0-9_]{0,39}$",
-    "tagPorId": "^#[0-9]+$"
+    "tagPorId": "^#[0-9]+$",
+    "email": "^[^\\s@]+@[^\\s@.]+(\\.[^\\s@.]+)+$"
   },
   "limites": {
     "corpoDoLeadBytes": 16384,
@@ -81,7 +82,7 @@
           "obrigatorio": true,
           "campos": {
             "nome": { "obrigatorio": false, "max": 120, "nota": "sem espaco nas pontas" },
-            "email": { "obrigatorio": false, "max": 254, "nota": "e-mail valido" },
+            "email": { "obrigatorio": false, "max": 254, "formato": "email", "nota": "o mesmo teste do pacote: texto, arroba, dominio com ponto, sem espaco" },
             "telefone": { "obrigatorio": false, "nota": "10 a 15 digitos depois de tirar tudo que nao e digito" }
           },
           "regra": "e-mail ou telefone obrigatorio; sem os dois, 422 SEM_CONTATO"

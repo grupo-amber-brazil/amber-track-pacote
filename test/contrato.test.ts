@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { montarCorpoLead, montarCorpoRelato, montarEntregaPagina } from "../src/corpos.js";
-import { CHAVE_DO_PONTO, CODIGO_DO_CLIQUE, VISITANTE } from "../src/formatos.js";
+import { CHAVE_DO_PONTO, CODIGO_DO_CLIQUE, EMAIL_VALIDO, VISITANTE } from "../src/formatos.js";
 import type { EntradaLead, RelatoDaPagina } from "../src/tipos.js";
 import { VERSAO_DA_API, VERSAO_DO_PACOTE } from "../src/versao.js";
 import { montarCorpoVisita, TETO_DA_VISITA_BYTES } from "../src/visita.js";
@@ -32,6 +32,7 @@ test("os formatos do pacote são os do contrato", () => {
   assert.equal(CHAVE_DO_PONTO.source, contrato.formatos.ponto);
   assert.equal(CODIGO_DO_CLIQUE.source, contrato.formatos.atk);
   assert.equal(VISITANTE.source, contrato.formatos.abv);
+  assert.equal(EMAIL_VALIDO.source, contrato.formatos.email);
   assert.equal(TETO_DA_VISITA_BYTES, contrato.limites.corpoDoEventoBytes);
 });
 

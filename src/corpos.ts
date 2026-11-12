@@ -7,6 +7,7 @@
 import {
   COOKIE_DO_CLIQUE,
   COOKIE_DO_VISITANTE,
+  EMAIL_VALIDO,
   ehCodigoDoClique,
   ehVisitante,
   textoOuNada,
@@ -28,7 +29,6 @@ export function caminhoSemQuery(valor: unknown): string | undefined {
   return textoOuNada(corte >= 0 ? valor.slice(0, corte) : valor, 200);
 }
 
-const EMAIL_VALIDO = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 const CHAVE_DE_CAMPO = /^[a-z][a-z0-9_]{0,39}$/;
 const MAX_CAMPOS = 30;
 const MAX_TAGS = 20;

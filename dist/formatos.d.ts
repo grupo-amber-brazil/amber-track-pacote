@@ -7,6 +7,8 @@
 export declare const CODIGO_DO_CLIQUE: RegExp;
 export declare const CHAVE_DO_PONTO: RegExp;
 export declare const VISITANTE: RegExp;
+/** E-mail aceito: texto, arroba, domínio com ponto e sem espaço. Mesmo teste da Dash (contrato `formatos.email`). */
+export declare const EMAIL_VALIDO: RegExp;
 /** Nome do cookie do clique. Gravado no servidor por `comAmberTrack`. */
 export declare const COOKIE_DO_CLIQUE = "_atk";
 /** Nome do cookie do visitante. Quem grava é o `proxy.ts` da página, nunca o pacote. */
