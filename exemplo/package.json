@@ -1,0 +1,32 @@
+{
+  "name": "amber-track-exemplo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Página de exemplo do @amber/track: um Next mínimo que usa o pacote como uma LP usaria. Prova a entrega (E2E local) e serve de referência para quem instalar.",
+  "type": "module",
+  "scripts": {
+    "pacote": "cd .. && npm run build && npm pack && cd exemplo && npm install ../amber-track-0.1.0.tgz",
+    "dev": "next dev -p 3100",
+    "dev:e2e": "node --env-file-if-exists=.env.local e2e/iniciar-com-ac-simulado.mjs",
+    "build": "next build",
+    "start": "next start -p 3100",
+    "e2e:rele": "node --env-file-if-exists=.env.local e2e/rele.mjs",
+    "e2e:1": "node --env-file-if-exists=.env.local e2e/roteiro-1-clique-e-visita.mjs",
+    "e2e:2": "node --env-file-if-exists=.env.local e2e/roteiro-2-pela-pagina.mjs",
+    "e2e:3": "node --env-file-if-exists=.env.local e2e/roteiro-3-pelo-amber-track.mjs",
+    "e2e:4": "node --env-file-if-exists=.env.local e2e/roteiro-4-dash-fora.mjs",
+    "e2e:5": "node --env-file-if-exists=.env.local e2e/roteiro-5-sck.mjs"
+  },
+  "dependencies": {
+    "@amber/track": "file:../amber-track-0.1.0.tgz",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "pg": "^8.16.3",
+    "typescript": "^5.9.3"
+  }
+}
