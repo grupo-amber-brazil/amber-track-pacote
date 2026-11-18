@@ -10,10 +10,23 @@ trocar a tag e rodar o install (ver [docs/atualizar-consumidor.md](docs/atualiza
 
 ---
 
-## [0.1.0] — não publicada
+## [0.2.0] — 2026-11-17
 
-A tag `v0.1.0` sai depois do E2E local e da promoção da Dash para a `main`, com
-`contrato/contrato-v1.json` igual, byte a byte, ao da Dash promovida.
+**Ação do consumidor:** trocar a tag para `#v0.2.0` (docs/atualizar-consumidor.md) e, na página que tem o botão
+"Próximo passo" de uma Página do Amber Track, montar o endereço do botão com `linkDoProximoPasso`. Sem isso nada
+quebra: o botão continua funcionando, só sem ligar o clique dele ao clique que trouxe a pessoa.
+
+### Adicionado
+
+- `linkDoProximoPasso(url)` em `@amber/track/client`: acrescenta `atk` (o clique desta visita, do cookie `_atk`) ao
+  link `https:` do botão. Sem clique, URL inválida, fora de `https:` ou que já traz `atk`: devolve a URL como veio.
+  Nunca lança.
+
+---
+
+## [0.1.0] — 2026-11-17
+
+Tag `v0.1.0` no commit `82fac05`, com `contrato/contrato-v1.json` igual, byte a byte, ao da Dash.
 
 **Ação do consumidor: instalação nova.** Instalar o pacote, pôr `AMBER_TRACK_URL` e
 `AMBER_TRACK_SITE_SECRET` no servidor da página (o segredo no cofre de infra, antes de a task def
