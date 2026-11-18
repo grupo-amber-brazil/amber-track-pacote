@@ -12,3 +12,5 @@ export declare function AmberTrackVisita(props: {
  * Guru: `abv_…|clk_…`, sem UTM.
  */
 export declare function montarSck(gateway: GatewayDoSck, utms: Utms, abv: string | null): string;
+/** O link do botão "Próximo passo" com o clique desta visita. Sem `_atk`, devolve a URL como veio. */
+export declare function linkDoProximoPasso(url: string): string;

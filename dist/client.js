@@ -3,13 +3,15 @@
  * `@amber/track/client`: a visita e o `sck` do checkout, no navegador.
  *
  * ```tsx
- * import { AmberTrackVisita, montarSck } from "@amber/track/client"
+ * import { AmberTrackVisita, linkDoProximoPasso, montarSck } from "@amber/track/client"
  * <AmberTrackVisita ponto="pc_…" />
  * const sck = montarSck("hotmart", utms, abv)
+ * const proximo = linkDoProximoPasso(urlDoBotao) // na hora do clique, no navegador
  * ```
  */
 import { useEffect } from "react";
 import { COOKIE_DO_CLIQUE, lerCookies } from "./formatos.js";
+import { linkDoProximoPassoCom } from "./proximo-passo.js";
 import { montarSckCom } from "./sck.js";
 import { criarRegistroDeVisitas } from "./visita.js";
 import { ENDERECO_PADRAO } from "./versao.js";
@@ -69,4 +71,15 @@ export function montarSck(gateway, utms, abv) {
         atk = undefined;
     }
     return montarSckCom(gateway, utms, abv, atk);
+}
+/** O link do botão "Próximo passo" com o clique desta visita. Sem `_atk`, devolve a URL como veio. */
+export function linkDoProximoPasso(url) {
+    let atk;
+    try {
+        atk = typeof document !== "undefined" ? lerCookies(document.cookie).get(COOKIE_DO_CLIQUE) : undefined;
+    }
+    catch {
+        atk = undefined;
+    }
+    return linkDoProximoPassoCom(url, atk);
 }

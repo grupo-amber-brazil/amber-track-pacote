@@ -5,7 +5,7 @@
  * que cada site usa. `test/pacote.test.ts` confere que esta constante é igual ao
  * `version` do `package.json`.
  */
-export declare const VERSAO_DO_PACOTE = "0.1.0";
+export declare const VERSAO_DO_PACOTE = "0.2.0";
 /** Versão da API do Amber Track: `/api/track/v1/`. */
 export declare const VERSAO_DA_API = 1;
 /** Endereço público da API, usado pela visita quando `NEXT_PUBLIC_AMBER_TRACK_URL` não existe. */

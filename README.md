@@ -137,6 +137,27 @@ para a tela.
   `abv_` e `clk_` nunca são cortados.
 - Guru: `abv_…|clk_…`, ou só um dos dois. Nunca UTM.
 
+#### Botão "Próximo passo" (0.2.0)
+
+`linkDoProximoPasso(url)` devolve o link do botão com o clique desta visita (o cookie `_atk`) no parâmetro
+`atk`, no fim da query e antes do fragmento. Sem clique, com clique fora do formato, com endereço que não é
+`https:`, inválido ou relativo, ou que já traz `atk`, devolve a URL exatamente como veio. Nunca lança.
+
+```tsx
+import { linkDoProximoPasso } from "@amber/track/client"
+
+const PROXIMO = "https://go.exemplo.com.br/aula-2" // o link do botão, copiado do bloco Página no Amber Track
+<a href={PROXIMO} onClick={(e) => { e.currentTarget.href = linkDoProximoPasso(PROXIMO) }}>Quero a aula 2</a>
+```
+
+Chame na hora do clique (ou depois de montar, como `montarSck` no `exemplo/app/checkout.tsx`), não no render
+do servidor: no servidor não há cookie, e a hidratação do React não corrige o `href` que veio no HTML.
+
+Sem a 0.2.0 o botão funciona pelo cookie do domínio de links, só sem o vínculo ao clique anterior.
+
+Use só no link copiado do bloco Página do Amber Track: a função acrescenta o código do clique a qualquer endereço
+`https:`, e num link de outro site esse código vai para quem recebe o clique.
+
 ## Como o envio funciona
 
 - **2 s, no máximo.** Cada chamada à API tem `AbortSignal.timeout(2000)`. `capturarLead` nunca lança

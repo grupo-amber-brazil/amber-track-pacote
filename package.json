@@ -1,6 +1,6 @@
 {
   "name": "@amber/track",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Liga as páginas da Amber ao Amber Track: cookie do clique no proxy, lead e relato no servidor, visita e sck no navegador. Sem dependência de runtime.",
   "type": "module",
   "license": "UNLICENSED",
